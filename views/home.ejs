@@ -10,6 +10,11 @@
   <% if (locals.files) { %>
     <p>files here</p>
   <% } %>
+  <form action="/files/create" method="POST">
+    <label for="file_upload">Upload File:</label>
+    <input type="file" id="file_upload" name="file_upload" accept="*/*" required>
+    <button type="submit">Upload</button>
+  </form>
   <form action="/logout" method="POST">
     <button type="submit">Logout</button>
   </form>
