@@ -11,6 +11,4 @@ router.post("/login", userController.loginPost);
 router.get("/login-failed", userController.loginFailedGet);
 router.post("/logout", userController.logoutPost);
 
-router.get("/home", userController.homeGet);
-
 module.exports = router;

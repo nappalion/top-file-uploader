@@ -1,14 +1,45 @@
 const cloudinary = require("../db/cloudinary");
 const { isAuth } = require("../routes/auth-middleware");
+const prisma = require("../db/prismadb");
+const path = require("node:path");
 
-const filesGet = [];
+const downloadGet = [
+  isAuth,
+  async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const file = await prisma.file.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    res.download(file.url, (err) => {
+      if (err) {
+        res.status(404).send(err);
+      }
+    });
+  },
+];
 
 const deletePost = [];
 
 const createPost = [
   isAuth,
   async (req, res) => {
-    const { file_upload } = req.body;
+    const { name } = req.body;
+    const { filename, size } = req.file;
+    const filePath = path.join(__dirname, "uploads", filename);
+
+    const folderId = parseInt(req.body.folderId, 10);
+
+    await prisma.file.create({
+      data: {
+        name,
+        folderId,
+        url: filePath,
+        size,
+      },
+    });
 
     // const uploadResult = await cloudinary.uploader
     //   .upload(
@@ -22,7 +53,8 @@ const createPost = [
     //   });
 
     // console.log(uploadResult);
+    res.redirect("/folders");
   },
 ];
 
-module.exports = { filesGet, createPost, deletePost };
+module.exports = { createPost, deletePost, downloadGet };

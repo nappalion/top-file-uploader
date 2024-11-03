@@ -6,15 +6,49 @@
   <title><%= title %></title>
 </head>
 <body>
-  <h1>Files / <%= filePath %></h1>
-  <% if (locals.files) { %>
-    <p>files here</p>
+  <h1><%= filePath %></h1>
+
+  <% if (locals.folders) { %>
+    <% for( let index = 0; index < locals.folders.length; index++ ) { %>
+      <p>folder: <%= locals.folders[index].name %></p>
+      <% 
+        const currentUrl = `${req.protocol}://${req.get('host')}${req.originalUrl.split('?')[0]}`;
+      %>
+      <a href="<%= currentUrl + '/' + locals.folders[index].name + '?parent_folder_id=' + folderId %>">Open</a>
+    <% } %>
   <% } %>
-  <form action="/files/create" method="POST">
-    <label for="file_upload">Upload File:</label>
+
+  <% if (locals.files) { %>
+    <% for( let index = 0; index < locals.files.length; index++ ) { %>
+      <p>file: <%= locals.files[index].name %></p>
+      <a href="/files/download/<%= locals.files[index].id %>">Download</a>
+    <% } %>
+  <% } %>
+
+  <h2>make file:</h2>
+  <form action="/files/create" method="POST" enctype="multipart/form-data">
+
+    <input type="hidden" id="folderId" name="folderId" value="<%= folderId %>" required>
+
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required>
+    
+    <label for="file_upload">File:</label>
     <input type="file" id="file_upload" name="file_upload" accept="*/*" required>
-    <button type="submit">Upload</button>
+
+    <button type="submit">Upload File</button>
   </form>
+
+  <h2>make folder:</h2>
+  <form action="/folders/create" method="POST">
+    <input type="hidden" id="parent_folder_id" name="parent_folder_id" value="<%= folderId %>" required>
+
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required>
+
+    <button type="submit">Create folder</button>
+  </form>
+
   <form action="/logout" method="POST">
     <button type="submit">Logout</button>
   </form>

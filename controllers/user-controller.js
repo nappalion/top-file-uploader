@@ -1,7 +1,10 @@
 const prisma = require("../db/prismadb");
 const passport = require("passport");
 const bcrypt = require("bcrypt");
+const path = require("node:path");
 const { isAuth } = require("../routes/auth-middleware");
+
+const ROOT_FOLDER = "";
 
 const signupGet = [
   (req, res) => {
@@ -14,12 +17,24 @@ const signupPost = [
     try {
       const { first_name, last_name, username, password } = req.body;
       const hashedPassword = await bcrypt.hash(password, 10);
-      await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           email: username,
           firstName: first_name,
           lastName: last_name,
           password: hashedPassword,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      // Create a root folder when a user account is created
+      await prisma.folder.create({
+        data: {
+          name: ROOT_FOLDER,
+          parentFolderId: null,
+          userId: newUser.id,
         },
       });
 
@@ -29,7 +44,7 @@ const signupPost = [
     }
   },
   passport.authenticate("local", {
-    successRedirect: "/home",
+    successRedirect: path.join("/folders", ROOT_FOLDER),
     failureRedirect: "/",
   }),
 ];
@@ -45,7 +60,7 @@ const loginPost = [
     next();
   },
   passport.authenticate("local", {
-    successRedirect: "/home",
+    successRedirect: path.join("/folders", ROOT_FOLDER),
     failureRedirect: "/login-failed",
   }),
 ];
@@ -66,16 +81,6 @@ function logoutPost(req, res, next) {
   res.redirect("/login");
 }
 
-const homeGet = [
-  isAuth,
-  (req, res) => {
-    res.render("home", {
-      title: "Home",
-      filePath: "",
-    });
-  },
-];
-
 module.exports = {
   signupGet,
   signupPost,
@@ -83,5 +88,4 @@ module.exports = {
   loginPost,
   loginFailedGet,
   logoutPost,
-  homeGet,
 };
