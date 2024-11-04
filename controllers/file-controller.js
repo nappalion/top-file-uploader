@@ -57,4 +57,20 @@ const createPost = [
   },
 ];
 
-module.exports = { createPost, deletePost, downloadGet };
+const updatePost = [
+  isAuth,
+  async (req, res) => {
+    const { name, id } = req.body;
+
+    await prisma.file.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        name: name,
+      },
+    });
+
+    res.redirect(path.join("/folders"));
+  },
+];
+
+module.exports = { createPost, deletePost, downloadGet, updatePost };

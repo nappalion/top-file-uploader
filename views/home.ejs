@@ -32,6 +32,12 @@
     <% for( let index = 0; index < locals.files.length; index++ ) { %>
       <p>file: <%= locals.files[index].name %></p>
       <a href="/files/download/<%= locals.files[index].id %>">Download</a>
+      <form action="/files/update" method="POST">
+        <input type="hidden" id="id" name="id" value="<%= locals.files[index].id %>" required>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <button type="submit">Rename</button>
+      </form>
     <% } %>
   <% } %>
 
