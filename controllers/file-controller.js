@@ -2,10 +2,28 @@ const cloudinary = require("../db/cloudinary");
 const { isAuth } = require("../routes/auth-middleware");
 const prisma = require("../db/prismadb");
 const path = require("node:path");
+const axios = require("axios");
+const os = require("os");
+
+async function downloadImage(url, name, format) {
+  const downloadsPath = path.resolve(
+    os.homedir(),
+    "Downloads",
+    `${name}.${format}`
+  );
+
+  const response = await axios({
+    url: url,
+    method: "GET",
+    responseType: "stream",
+  });
+
+  return response.data;
+}
 
 const downloadGet = [
   isAuth,
-  async (req, res) => {
+  async (req, res, next) => {
     const id = parseInt(req.params.id, 10);
     const file = await prisma.file.findUnique({
       where: {
@@ -13,11 +31,15 @@ const downloadGet = [
       },
     });
 
-    res.download(file.url, (err) => {
-      if (err) {
-        res.status(404).send(err);
-      }
-    });
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${file.name}.${file.format}"`
+    );
+    res.setHeader("Content-Type", file.format);
+
+    const fileStream = await downloadImage(file.url, file.name, file.format);
+
+    fileStream.pipe(res);
   },
 ];
 
@@ -38,32 +60,33 @@ const createPost = [
   isAuth,
   async (req, res) => {
     const { name } = req.body;
-    const { filename, size } = req.file;
-    const filePath = path.join(__dirname, "uploads", filename);
+    const { buffer } = req.file;
 
     const folderId = parseInt(req.body.folderId, 10);
+
+    console.log(req.file);
+    const uploadResult = await new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream((error, result) => {
+          if (error) {
+            return reject(error);
+          }
+
+          return resolve(result);
+        })
+        .end(buffer);
+    });
 
     await prisma.file.create({
       data: {
         name,
         folderId,
-        url: filePath,
-        size,
+        url: uploadResult.secure_url,
+        size: uploadResult.bytes,
+        format: uploadResult.format,
       },
     });
 
-    // const uploadResult = await cloudinary.uploader
-    //   .upload(
-    //     "https://res.cloudinary.com/demo/image/upload/getting-started/shoes.jpg",
-    //     {
-    //       public_id: "shoes",
-    //     }
-    //   )
-    //   .catch((error) => {
-    //     console.log(error);
-    //   });
-
-    // console.log(uploadResult);
     res.redirect("/folders");
   },
 ];
