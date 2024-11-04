@@ -21,6 +21,8 @@ model File {
   url       String?
   size      Int
   createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([folderId, name])
 }
 
 model Folder {
