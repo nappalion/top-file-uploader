@@ -15,6 +15,12 @@
         const currentUrl = `${req.protocol}://${req.get('host')}${req.originalUrl.split('?')[0]}`;
       %>
       <a href="<%= currentUrl + '/' + locals.folders[index].name + '?parent_folder_id=' + folderId %>">Open</a>
+      <form action="/folders/update" method="POST">
+        <input type="hidden" id="id" name="id" value="<%= locals.folders[index].id %>" required>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <button type="submit">Rename</button>
+      </form>
     <% } %>
   <% } %>
 
