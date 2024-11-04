@@ -77,7 +77,18 @@ const foldersGet = [
   },
 ];
 
-const deletePost = [];
+const deletePost = [
+  isAuth,
+  async (req, res) => {
+    const { id } = req.body;
+
+    await prisma.folder.delete({
+      where: { id: parseInt(id, 10) },
+    });
+
+    res.redirect(path.join("/folders"));
+  },
+];
 
 const createPost = [
   isAuth,
