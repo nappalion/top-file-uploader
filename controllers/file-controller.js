@@ -63,7 +63,6 @@ const createPost = [
 
     const folderId = parseInt(req.body.folderId, 10);
 
-    console.log(req.file);
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream((error, result) => {

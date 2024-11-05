@@ -138,7 +138,6 @@ const sharePost = [
   async (req, res, next) => {
     try {
       const { selected_folder_id, duration } = req.body;
-      console.log(selected_folder_id, duration);
 
       await prisma.folder.update({
         where: {
@@ -172,8 +171,6 @@ const shareGet = [
       folder.shareId !== null &&
       folder.shareExpiration !== null &&
       folder.shareExpiration > new Date();
-
-    console.log(isShareable);
 
     if (isShareable) {
       const files = await prisma.file.findMany({
