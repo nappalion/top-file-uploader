@@ -6,7 +6,7 @@
   <title><%= title %></title>
 
   <style>
-    #file-properties-sidebar {
+    #file-properties-sidebar, #share-folder-form, #share-folder-url {
       display: none
     }
   </style>
@@ -27,9 +27,11 @@
         <input type="text" id="name" name="name" required>
         <button type="submit">Rename folder</button>
       </form>
+      <button onclick="openShareForm('<%= locals.folders[index].id  %>')">Share folder</button>
       <form action="/folders/delete" method="POST">
         <input type="hidden" id="id" name="id" value="<%= locals.folders[index].id %>" required>
         <button type="submit" onclick="return confirm('Are you sure you want to delete this folder?');">Delete folder</button>
+        
       </form>
     <% } %>
   <% } %>
@@ -77,6 +79,25 @@
     <p id="file-created-at"></p>
   </div>
 
+  
+  <div id="share-folder-form">
+    <button onclick="closeShareForm()">Close</button>
+    <form id="share-form" action="/folders/share" method="POST">
+      <input type="hidden" id="selected_folder_id" name="selected_folder_id" required>
+      <label for="duration">Duration (days)</label>
+      <input type="number" id="duration" name="duration" required>
+      <button id="submit-form" type="submit">Share</button>
+    </form>
+  </div>
+
+  <div id="share-folder-url">
+    <button onclick="closeShareUrl()">Close</button>
+    <label for="url">URL</label>
+    <input readonly id="share-url" name="url" required>
+    <button onclick="copyToClipboard()">Copy</button>
+    <button onclick="closeShareUrl()">Ok</button>
+  </div>
+
   <!-- Todo add these to nav bar -->
   <h2>make folder:</h2>
   <form action="/folders/create" method="POST">
@@ -93,6 +114,31 @@
   </form>
 </body>
 <script>
+  const shareForm = document.getElementById("share-form")
+  shareForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const formData = new FormData(shareForm);
+    const urlEncodedData = new URLSearchParams(formData).toString();
+
+    try {
+      const response = await fetch(this.action, {
+        method: "POST",
+        headers: {
+        "Content-Type": "application/x-www-form-urlencoded", 
+      },
+        body: urlEncodedData,
+      });
+
+      const data = await response.json();
+
+      openShareUrl(null, formData.get("selected_folder_id"))
+
+    } catch (error) {
+      alert("An unexpected error occurred retrieving URL.");
+    }
+  })
+
   function viewFileProperties(name, size, createdAt) {
     const sidebar = document.getElementById("file-properties-sidebar")
     const fileName = document.getElementById("file-name")
@@ -108,5 +154,73 @@
     const sidebar = document.getElementById("file-properties-sidebar")
     sidebar.style.display = 'none';
   }
+
+  async function getShareUrl(folderId) {
+    const response = await fetch(`/folders/share/getShareUrl/${folderId}`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.shareUrl;
+    } else {
+      throw new Error('Failed to fetch share URL');
+    }
+  }
+
+  async function openShareForm(folderId) {
+    const shareUrl = await getShareUrl(folderId);
+
+    if (shareUrl) {
+      openShareUrl(shareUrl, folderId);
+      return;
+    }
+
+    const folderIdInput = document.getElementById("selected_folder_id");
+    folderIdInput.value = folderId;
+
+    const shareForm = document.getElementById("share-folder-form");
+    shareForm.style.display = 'block';
+  }
+  
+  function closeShareForm() {
+    const shareForm = document.getElementById("share-folder-form");
+    shareForm.style.display = 'none';
+  }
+
+  async function openShareUrl(url, folderId) {
+    closeShareForm();
+
+    if (!url) {
+      shareUrl = await getShareUrl(folderId);
+      if (!shareUrl) { 
+        return;
+      } else {
+        url = shareUrl;
+      }
+    }
+
+    const shareUrlDisplay = document.getElementById("share-folder-url");
+    shareUrlDisplay.style.display = 'block';
+
+    const shareUrlInput = document.getElementById("share-url");
+    shareUrlInput.value = url;
+  }
+
+  function closeShareUrl() {
+    const shareUrlDisplay = document.getElementById("share-folder-url");
+    shareUrlDisplay.style.display = 'none';
+  }
+
+  async function copyToClipboard() {
+    const shareUrlInput = document.getElementById("share-url");
+    
+    try {
+        await navigator.clipboard.writeText(shareUrlInput.value);
+        alert("URL copied to clipboard!");
+    } catch (err) {
+        console.error("Failed to copy: ", err);
+    }
+}
+
+
 </script>
 </html>

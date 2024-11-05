@@ -6,4 +6,12 @@ function isAuth(req, res, next) {
   }
 }
 
-module.exports = { isAuth };
+function isAuthRedirectToHome(req, res, next) {
+  if (req.isAuthenticated()) {
+    res.redirect("/folders");
+  } else {
+    next();
+  }
+}
+
+module.exports = { isAuth, isAuthRedirectToHome };

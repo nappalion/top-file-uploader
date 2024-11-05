@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+
+  <style>
+    #file-properties-sidebar {
+      display: none
+    }
+  </style>
+</head>
+<body>
+  <h1><%= filePath %></h1>
+
+  <% if (locals.files) { %>
+    <% for( let index = 0; index < locals.files.length; index++ ) { %>
+      <p>file: <%= locals.files[index].name %></p>
+      <a href="/files/download/<%= locals.files[index].id %>">Download</a>
+      <button onclick="viewFileProperties('<%= locals.files[index].name %>', '<%= locals.files[index].size %>','<%= locals.files[index].createdAt %>')">View details</button>
+    <% } %>
+  <% } %>
+
+  <div id="file-properties-sidebar">
+    <button onclick="closeFileProperties()">Close</button>
+    <h1>File details</h1>
+    <h2>Name</h2>
+    <p id="file-name"></p>
+    <h2>Size</h2>
+    <p id="file-size"></p>
+    <h2>Created At</h2>
+    <p id="file-created-at"></p>
+  </div>
+</body>
+
+<script>
+  function viewFileProperties(name, size, createdAt) {
+    const sidebar = document.getElementById("file-properties-sidebar")
+    const fileName = document.getElementById("file-name")
+    const fileSize = document.getElementById("file-size")
+    const fileCreatedAt = document.getElementById("file-created-at")
+    sidebar.style.display = 'block';
+    fileName.textContent = name;
+    fileSize.textContent = size;
+    fileCreatedAt.textContent = createdAt;
+  }
+
+  function closeFileProperties() {
+    const sidebar = document.getElementById("file-properties-sidebar")
+    sidebar.style.display = 'none';
+  }
+</script>
+</html>

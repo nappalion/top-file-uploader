@@ -22,7 +22,6 @@ async function downloadImage(url, name, format) {
 }
 
 const downloadGet = [
-  isAuth,
   async (req, res, next) => {
     const id = parseInt(req.params.id, 10);
     const file = await prisma.file.findUnique({

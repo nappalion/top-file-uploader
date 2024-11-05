@@ -1,6 +1,7 @@
 const prisma = require("../db/prismadb");
 const path = require("node:path");
 const { isAuth } = require("../routes/auth-middleware");
+const { randomUUID } = require("crypto");
 
 const ROOT_PATH_NAME = "Files / ";
 
@@ -120,4 +121,109 @@ const updatePost = [
   },
 ];
 
-module.exports = { homeGet, foldersGet, createPost, deletePost, updatePost };
+const calculateShareExpiration = (duration) => {
+  const currentDate = new Date();
+  const durationInDays = parseInt(duration, 10);
+
+  const millisecondsInADay = 24 * 60 * 60 * 1000;
+
+  const expirationDate = new Date(
+    currentDate.getTime() + durationInDays * millisecondsInADay
+  );
+
+  return expirationDate;
+};
+
+const sharePost = [
+  async (req, res, next) => {
+    try {
+      const { selected_folder_id, duration } = req.body;
+      console.log(selected_folder_id, duration);
+
+      await prisma.folder.update({
+        where: {
+          id: parseInt(selected_folder_id, 10),
+        },
+        data: {
+          shareId: randomUUID(),
+          shareExpiration: calculateShareExpiration(duration),
+        },
+      });
+
+      res.status(200).json({ message: "Folder shared successfully" });
+    } catch (error) {
+      console.log("Error sharing folder:", error);
+      res
+        .status(500)
+        .json({ error: "An error occurred while sharing the folder." });
+    }
+  },
+];
+
+const shareGet = [
+  async (req, res) => {
+    const { shareId } = req.params;
+
+    const folder = await prisma.folder.findUnique({
+      where: { shareId: shareId },
+    });
+
+    const isShareable =
+      folder.shareId !== null &&
+      folder.shareExpiration !== null &&
+      folder.shareExpiration > new Date();
+
+    console.log(isShareable);
+
+    if (isShareable) {
+      const files = await prisma.file.findMany({
+        where: {
+          folderId: folder.id,
+        },
+      });
+
+      res.render("shared", {
+        title: `Shared Folder: ${folder.name}`,
+        filePath: `Shared Folder: ${folder.name}`,
+        files: files,
+      });
+    } else {
+      // TODO: Redirect to error page...
+      res.redirect("/");
+    }
+  },
+];
+
+const shareUrlGet = [
+  async (req, res) => {
+    const { folderId } = req.params;
+
+    const { shareId, shareExpiration } = await prisma.folder.findUnique({
+      where: { id: parseInt(folderId, 10) },
+    });
+
+    const isShareable =
+      shareId !== null &&
+      shareExpiration !== null &&
+      shareExpiration > new Date();
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    if (isShareable) {
+      return res.json({ shareUrl: `${baseUrl}/folders/share/${shareId}` });
+    } else {
+      return res.json({ shareUrl: null });
+    }
+  },
+];
+
+module.exports = {
+  homeGet,
+  foldersGet,
+  createPost,
+  deletePost,
+  updatePost,
+  shareGet,
+  sharePost,
+  shareUrlGet,
+};

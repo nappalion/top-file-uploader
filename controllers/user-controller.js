@@ -2,11 +2,12 @@ const prisma = require("../db/prismadb");
 const passport = require("passport");
 const bcrypt = require("bcrypt");
 const path = require("node:path");
-const { isAuth } = require("../routes/auth-middleware");
+const { isAuth, isAuthRedirectToHome } = require("../routes/auth-middleware");
 
 const ROOT_FOLDER = "";
 
 const signupGet = [
+  isAuthRedirectToHome,
   (req, res) => {
     res.render("index", { title: "Sign up" });
   },
@@ -50,6 +51,7 @@ const signupPost = [
 ];
 
 const loginGet = [
+  isAuthRedirectToHome,
   (req, res) => {
     res.render("login", { title: "Log in" });
   },
